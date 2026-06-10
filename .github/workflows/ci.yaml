@@ -22,10 +22,7 @@
 name: CI
 
 on:
-  push:
-    branches: [ '*' ]
-  pull_request:
-    branches: [ '*' ]
+  workflow_dispatch:
 
 jobs:
   mvn:
@@ -44,48 +41,52 @@ jobs:
           - name: 'full-build-cppunit-tests'
             jdk: 11
             args: '-Pfull-build verify -Dtest=_ -DfailIfNoTests=false'
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
       fail-fast: false
     timeout-minutes: 360
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v6
-    - name: Set up JDK ${{ matrix.profile.jdk }}
-      uses: actions/setup-java@v5
-      with:
-        java-version: ${{ matrix.profile.jdk }}
-        distribution: temurin
-        cache: 'maven'
-    - name: Show the first log message
-      run: git log -n1
-    - name: Install C Dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y libcppunit-dev libsasl2-dev
-    - name: Build with Maven (${{ matrix.profile.name }})
-      run: mvn -B -V -e -ntp "-Dstyle.color=always" ${{ matrix.profile.args }}
-      env:
-        MAVEN_OPTS: -Djansi.force=true
-    - name: Upload unit test results
-      if: ${{ failure() }}
-      uses: actions/upload-artifact@v7
-      with:
-        name: surefire-reports-${{ matrix.profile.name }}
-        path: ./**/target/surefire-reports/
-        if-no-files-found: ignore
-    - name: Upload integration test results
-      if: ${{ failure() }}
-      uses: actions/upload-artifact@v7
-      with:
-        name: failsafe-reports-${{ matrix.profile.name }}
-        path: ./**/target/failsafe-reports/
-        if-no-files-found: ignore
-    - name: Upload cppunit test logs
-      if: ${{ failure() }}
-      uses: actions/upload-artifact@v7
-      with:
-        name: cppunit-logs-${{ matrix.profile.name }}
-        path: ./zookeeper-client/zookeeper-client-c/target/c/TEST-*.txt
-        if-no-files-found: ignore
+      - uses: actions/checkout@v6
+      - name: Set up JDK ${{ matrix.profile.jdk }}
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ matrix.profile.jdk }}
+          distribution: temurin
+          cache: 'maven'
+      - name: Show the first log message
+        run: git log -n1
+      - name: Install C Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y libcppunit-dev libsasl2-dev
+      - name: Build with Maven (${{ matrix.profile.name }})
+        run: mvn -B -V -e -ntp "-Dstyle.color=always" ${{ matrix.profile.args }}
+        env:
+          MAVEN_OPTS: -Djansi.force=true
+      - name: Upload unit test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: surefire-reports-${{ matrix.profile.name }}
+          path: ./**/target/surefire-reports/
+          if-no-files-found: ignore
+      - name: Upload integration test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: failsafe-reports-${{ matrix.profile.name }}
+          path: ./**/target/failsafe-reports/
+          if-no-files-found: ignore
+      - name: Upload cppunit test logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: cppunit-logs-${{ matrix.profile.name }}
+          path: ./zookeeper-client/zookeeper-client-c/target/c/TEST-*.txt
+          if-no-files-found: ignore
   typo-check:
     name: Typo Check
     # only run on pull requests because of security reasons
