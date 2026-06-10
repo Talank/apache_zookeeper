@@ -18,8 +18,7 @@
 name: End to End Tests
 
 on:
-  push:
-  pull_request:
+  workflow_dispatch:
 
 jobs:
   compatibility:
@@ -50,30 +49,30 @@ jobs:
           MAVEN_OPTS: -Djansi.force=true
       - name: Cache ZooKeeper ${{ matrix.zk }}
         id: dist-cache
-        if: matrix.zk != 'nightly'
+        if: always()
         uses: actions/cache@v4
         with:
           key: apache-zookeeper-${{ matrix.zk }}-bin.tar.gz
           path: apache-zookeeper-${{ matrix.zk }}-bin.tar.gz
       - name: Download ZooKeeper ${{ matrix.zk }}
-        if: matrix.zk != 'nightly' && steps.dist-cache.outputs.cache-hit != 'true'
+        if: always()
         run: |
           curl -O https://archive.apache.org/dist/zookeeper/zookeeper-${{ matrix.zk }}/apache-zookeeper-${{ matrix.zk }}-bin.tar.gz
       - name: Extract ZooKeeper ${{ matrix.zk }}
-        if: matrix.zk != 'nightly'
+        if: always()
         run: tar -xzvf apache-zookeeper-${{ matrix.zk }}-bin.tar.gz
       - name: Test ZooKeeper nightly server and ${{ matrix.zk }} client
-        if: matrix.zk != 'nightly'
+        if: always()
         run: tools/ci/test-connectivity.py --server . --client apache-zookeeper-${{ matrix.zk }}-bin
         env:
           ZOOCFG: zoo_sample.cfg
       - name: Test ZooKeeper ${{ matrix.zk }} server and nightly client
-        if: matrix.zk != 'nightly'
+        if: always()
         run: tools/ci/test-connectivity.py --server apache-zookeeper-${{ matrix.zk }}-bin --client .
         env:
           ZOOCFG: zoo_sample.cfg
       - name: Test ZooKeeper nightly server and client
-        if: matrix.zk == 'nightly'
+        if: always()
         run: tools/ci/test-connectivity.py --server . --client .
         env:
           ZOOCFG: zoo_sample.cfg
