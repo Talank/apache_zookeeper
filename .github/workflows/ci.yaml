@@ -63,8 +63,17 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y libcppunit-dev libsasl2-dev
+      - name: Install C Dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install autoconf automake libtool
       - name: Build with Maven (${{ matrix.profile.name }})
+        if: runner.os != 'Windows'
         run: mvn -B -V -e -ntp "-Dstyle.color=always" ${{ matrix.profile.args }}
+        env:
+          MAVEN_OPTS: -Djansi.force=true
+      - name: Build with Maven (${{ matrix.profile.name }})
+        if: runner.os == 'Windows'
+        run: mvn -B -V -e -ntp "-Dstyle.color=always" ${{ matrix.profile.args }} -DskipCppUnit -pl '!zookeeper-client/zookeeper-client-c'
         env:
           MAVEN_OPTS: -Djansi.force=true
       - name: Upload unit test results
