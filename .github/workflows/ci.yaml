@@ -54,11 +54,12 @@ jobs:
         uses: actions/setup-java@v5
         with:
           java-version: ${{ matrix.profile.jdk }}
-          distribution: temurin
+          distribution: ${{ (matrix.profile.jdk == 8 && runner.os == 'macOS') && 'zulu' || 'temurin' }}
           cache: 'maven'
       - name: Show the first log message
         run: git log -n1
       - name: Install C Dependencies
+        if: runner.os == 'Linux'
         run: |
           sudo apt update
           sudo apt install -y libcppunit-dev libsasl2-dev
